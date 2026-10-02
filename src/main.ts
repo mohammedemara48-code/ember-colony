@@ -12,7 +12,7 @@ if (!parent) throw new Error('#app missing');
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent,
-  backgroundColor: '#0b1a2a',
+  backgroundColor: '#070f1a',
   scale: {
     mode: Phaser.Scale.RESIZE,
     width: window.innerWidth,
@@ -21,7 +21,8 @@ const config: Phaser.Types.Core.GameConfig = {
   },
   scene: [BootScene, MenuScene, PlayScene, EndScene],
   fps: { target: 60, forceSetTimeOut: true },
-  render: { antialias: false, pixelArt: true, roundPixels: true },
+  // HD soft rendering — NOT chunky pixel-art / Atari mode
+  render: { antialias: true, pixelArt: false, roundPixels: false, transparent: false },
   audio: { disableWebAudio: false },
 };
 

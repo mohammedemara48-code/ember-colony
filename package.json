@@ -1,17 +1,16 @@
 {
   "name": "ember-colony",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "\u0646\u062c\u0627\u0629 \u0641\u064a \u0627\u0644\u0635\u0642\u064a\u0639 \u2014 Frostpunk-like strategy survival",
   "scripts": {
-    "dev": "npm run restore:bundle && npm run unpack:assets && vite",
-    "build": "npm run restore:bundle && npm run unpack:assets && npm run gen:icons && tsc && vite build",
+    "dev": "npm run unpack:assets && vite",
+    "build": "npm run unpack:assets && npm run gen:icons && tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "gen:icons": "node scripts/gen-icons.mjs",
-    "unpack:assets": "node scripts/unpack-assets.mjs",
-    "restore:bundle": "node scripts/restore-from-bundle.mjs"
+    "unpack:assets": "node scripts/unpack-assets.mjs"
   },
   "dependencies": {
     "phaser": "3.87.0",
