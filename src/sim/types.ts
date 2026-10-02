@@ -4,6 +4,9 @@ export type BuildingKind =
   | 'gathering'
   | 'cookhouse'
   | 'coal_pile'
+  | 'thumper'
+  | 'workshop'
+  | 'medical'
   | 'tree'
   | 'snow';
 
@@ -13,9 +16,17 @@ export type CitizenState =
   | 'working'
   | 'eating'
   | 'sleeping'
-  | 'freezing';
+  | 'freezing'
+  | 'healing';
 
-export type JobKind = 'gather_wood' | 'mine_coal' | 'cook' | 'rest' | 'none';
+export type JobKind =
+  | 'gather_wood'
+  | 'mine_coal'
+  | 'cook'
+  | 'craft'
+  | 'heal'
+  | 'rest'
+  | 'none';
 
 export interface Cell {
   x: number;
@@ -35,6 +46,7 @@ export interface Building {
   workers: number;
   capacity: number;
   labelAr: string;
+  hp?: number;
 }
 
 export interface Citizen {
@@ -50,13 +62,16 @@ export interface Citizen {
   job: JobKind;
   workplaceId: string | null;
   homeId: string | null;
-  hunger: number; // 0 full … 100 starving
-  cold: number; // 0 warm … 100 frozen
-  hopeBias: number; // personal -10..10
+  hunger: number;
+  cold: number;
+  health: number;
+  hopeBias: number;
   workCooldown: number;
   thoughtCooldown: number;
   currentThought: string | null;
   speed: number;
+  facing: 0 | 1 | 2 | 3; // down left right up
+  variant: number;
 }
 
 export interface Resources {
@@ -64,8 +79,22 @@ export interface Resources {
   wood: number;
   food: number;
   rawFood: number;
+  steel: number;
   hope: number;
   discontent: number;
+}
+
+export interface BuildRecipe {
+  kind: BuildingKind;
+  labelAr: string;
+  wood: number;
+  coal: number;
+  food: number;
+  steel: number;
+  w: number;
+  h: number;
+  capacity: number;
+  tex: string;
 }
 
 export interface SimConfig {
@@ -82,9 +111,10 @@ export interface SimConfig {
   ambientDay: number;
   ambientNight: number;
   coldSnapTemp: number;
+  stormTemp: number;
 }
 
-export type EventKind = 'law' | 'cold_snap' | 'dawn' | 'none';
+export type EventKind = 'law' | 'cold_snap' | 'storm' | 'dawn' | 'none';
 
 export interface GameEvent {
   id: string;
@@ -93,7 +123,7 @@ export interface GameEvent {
   bodyAr: string;
   choices: { id: string; labelAr: string; effect: string }[];
   fired: boolean;
-  atProgress: number; // 0..1 of scenario
+  atProgress: number;
 }
 
 export type EndReason =
@@ -102,7 +132,16 @@ export type EndReason =
   | 'discontent_revolt'
   | 'starved'
   | 'frozen'
+  | 'storm'
   | 'none';
+
+export interface LawState {
+  emergencyShift: boolean;
+  childLabour: boolean;
+  foodRation: boolean;
+  radicalTreatment: boolean;
+  faithKeepers: boolean;
+}
 
 export interface SimSnapshot {
   time: number;
@@ -119,5 +158,8 @@ export interface SimSnapshot {
   ended: boolean;
   endReason: EndReason;
   coldSnapActive: boolean;
+  stormActive: boolean;
   message: string | null;
+  laws: LawState;
+  heatRadius: number;
 }

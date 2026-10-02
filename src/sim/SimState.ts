@@ -6,14 +6,21 @@ import type {
   EndReason,
   GameEvent,
   JobKind,
+  LawState,
   Resources,
   SimConfig,
-  SimSnapshot,
+  BuildingKind,
 } from './types';
 import { DEFAULT_CONFIG } from './config';
 import { applySimUpdate } from './simUpdate';
-import { placeBuilding, placeBuildings, spawnCitizens, setupEvents } from './simSetup';
-import { chooseEvent as doChoose, snapshot as doSnap, tryBoostGenerator as doBoost } from './simActions';
+import { placeBuildings, spawnCitizens, setupEvents } from './simSetup';
+import {
+  chooseEvent as doChoose,
+  snapshot as doSnap,
+  tryBoostGenerator as doBoost,
+  tryPlaceBuilding as doPlace,
+  enactLaw as doLaw,
+} from './simActions';
 
 export class SimState {
   readonly config: SimConfig;
@@ -26,6 +33,9 @@ export class SimState {
   generatorLevel = 1;
   coldSnapActive = false;
   coldSnapTimer = 0;
+  stormActive = false;
+  stormTimer = 0;
+  stormShelter = false;
   ended = false;
   endReason: EndReason = 'none';
   message: string | null = null;
@@ -35,8 +45,15 @@ export class SimState {
   lawChildLabour = false;
   lawEmergencyShift = false;
   foodRationStrict = false;
+  laws: LawState = {
+    emergencyShift: false,
+    childLabour: false,
+    foodRation: false,
+    radicalTreatment: false,
+    faithKeepers: false,
+  };
+  lawsUnlocked: Record<string, boolean> = {};
   assignTimer = 0;
-  eatTimer = 0;
   hopeTick = 0;
 
   constructor(config: Partial<SimConfig> = {}) {
@@ -45,14 +62,15 @@ export class SimState {
       coal: this.config.startingCoal,
       wood: this.config.startingWood,
       food: this.config.startingFood,
-      rawFood: 12,
-      hope: 55,
-      discontent: 18,
+      rawFood: 14,
+      steel: 0,
+      hope: 58,
+      discontent: 16,
     };
     this.buildGrid();
-    this.placeBuildings();
-    this.spawnCitizens();
-    this.setupEvents();
+    placeBuildings(this);
+    spawnCitizens(this);
+    setupEvents(this);
     this.recomputeHeat();
   }
 
@@ -66,12 +84,13 @@ export class SimState {
 
   get isNight() {
     const cycle = this.time % this.config.dayNightCycle;
-    return cycle > this.config.dayNightCycle * 0.45;
+    return cycle > this.config.dayNightCycle * 0.42;
   }
 
   get ambientTemp() {
     let base = this.isNight ? this.config.ambientNight : this.config.ambientDay;
-    if (this.coldSnapActive) base = this.config.coldSnapTemp;
+    if (this.stormActive) base = this.config.stormTemp;
+    else if (this.coldSnapActive) base = this.config.coldSnapTemp;
     return base;
   }
 
@@ -87,26 +106,18 @@ export class SimState {
     }
   }
 
-  private placeBuilding(kind: any, x: number, y: number, w: number, h: number, capacity: number, labelAr: string, blockWalk = true) {
-    return placeBuilding(this, kind, x, y, w, h, capacity, labelAr, blockWalk);
-  }
-  private placeBuildings() { placeBuildings(this); }
-  private spawnCitizens() { spawnCitizens(this); }
-  private setupEvents() { setupEvents(this); }
   recomputeHeat() {
     const { gridW, gridH, generatorHeatRadius } = this.config;
     for (let y = 0; y < gridH; y++) {
-      for (let x = 0; x < gridW; x++) {
-        this.grid[y][x].heat = 0;
-      }
+      for (let x = 0; x < gridW; x++) this.grid[y][x].heat = 0;
     }
     if (!this.generatorOn) return;
     const gen = this.buildings.find((b) => b.kind === 'generator');
     if (!gen) return;
     const gx = gen.x + gen.w / 2;
     const gy = gen.y + gen.h / 2;
-    const radius = generatorHeatRadius + (this.generatorLevel - 1) * 1.5;
-    const power = this.coldSnapActive ? 0.75 : 1;
+    const radius = generatorHeatRadius + (this.generatorLevel - 1) * 1.6;
+    const power = this.stormActive ? 0.65 : this.coldSnapActive ? 0.78 : 1;
     for (let y = 0; y < gridH; y++) {
       for (let x = 0; x < gridW; x++) {
         const d = Math.hypot(x + 0.5 - gx, y + 0.5 - gy);
@@ -123,7 +134,7 @@ export class SimState {
       for (let yy = b.y; yy < b.y + b.h; yy++) {
         for (let xx = b.x; xx < b.x + b.w; xx++) {
           if (yy >= 0 && xx >= 0 && yy < gridH && xx < gridW) {
-            this.grid[yy][xx].heat = Math.max(this.grid[yy][xx].heat, 0.35);
+            this.grid[yy][xx].heat = Math.max(this.grid[yy][xx].heat, 0.38);
           }
         }
       }
@@ -167,12 +178,41 @@ export class SimState {
     for (const b of this.buildings) b.workers = 0;
 
     const workplaces = this.buildings.filter((b) =>
-      ['gathering', 'cookhouse', 'coal_pile'].includes(b.kind),
+      ['gathering', 'cookhouse', 'coal_pile', 'thumper', 'workshop', 'medical'].includes(
+        b.kind,
+      ),
     );
 
     for (const c of this.citizens) {
+      if (c.health <= 0) continue;
       if (c.state === 'freezing' && c.cold > 90) continue;
-      if (c.hunger > 75) {
+
+      if (this.stormShelter) {
+        const home = this.buildings.find((b) => b.id === c.homeId);
+        if (home) {
+          const spot = nearestWalkable(this.grid, home.x, home.y, home.w, home.h);
+          if (spot && (c.state !== 'sleeping' || Math.hypot(c.x - spot.x, c.y - spot.y) > 1.5)) {
+            c.job = 'rest';
+            this.setPath(c, spot.x, spot.y);
+          }
+        }
+        continue;
+      }
+
+      if (c.health < 40) {
+        const med = this.buildings.find((b) => b.kind === 'medical');
+        if (med) {
+          const spot = nearestWalkable(this.grid, med.x, med.y, med.w, med.h);
+          if (spot) {
+            c.job = 'none';
+            c.state = 'healing';
+            this.setPath(c, spot.x, spot.y);
+          }
+        }
+        continue;
+      }
+
+      if (c.hunger > 72) {
         const cook = this.buildings.find((b) => b.kind === 'cookhouse');
         if (cook && this.resources.food > 0) {
           const spot = nearestWalkable(this.grid, cook.x, cook.y, cook.w, cook.h);
@@ -192,7 +232,6 @@ export class SimState {
           const spot = nearestWalkable(this.grid, home.x, home.y, home.w, home.h);
           if (spot) {
             c.job = 'rest';
-            c.state = 'walking';
             this.setPath(c, spot.x, spot.y);
           }
         }
@@ -213,46 +252,66 @@ export class SimState {
         continue;
       }
 
-      workplaces.sort((a, b) => a.workers / a.capacity - b.workers / b.capacity);
+      // Priority: coal if low, then wood, cook, workshop, medical staff
+      workplaces.sort((a, b) => {
+        const need = (k: string) => {
+          if (k === 'coal_pile' || k === 'thumper')
+            return this.resources.coal < 40 ? -2 : 0;
+          if (k === 'gathering') return this.resources.wood < 30 ? -1 : 0;
+          if (k === 'cookhouse') return this.resources.food < 20 ? -1.5 : 0;
+          return 0;
+        };
+        return (
+          a.workers / Math.max(1, a.capacity) +
+          need(a.kind) -
+          (b.workers / Math.max(1, b.capacity) + need(b.kind))
+        );
+      });
+
       const target = workplaces.find((b) => b.workers < b.capacity);
       if (!target) {
         c.state = 'idle';
         continue;
       }
-      const spot = nearestWalkable(
-        this.grid,
-        target.x,
-        target.y,
-        target.w,
-        target.h,
-      );
+      const spot = nearestWalkable(this.grid, target.x, target.y, target.w, target.h);
       if (!spot) continue;
       target.workers++;
       c.workplaceId = target.id;
       c.job =
         target.kind === 'gathering'
           ? 'gather_wood'
-          : target.kind === 'coal_pile'
+          : target.kind === 'coal_pile' || target.kind === 'thumper'
             ? 'mine_coal'
-            : 'cook';
+            : target.kind === 'cookhouse'
+              ? 'cook'
+              : target.kind === 'workshop'
+                ? 'craft'
+                : target.kind === 'medical'
+                  ? 'heal'
+                  : 'none';
       this.setPath(c, spot.x, spot.y);
-    }
-
-    if (this.lawChildLabour) {
-      this.resources.wood += 0.02;
     }
   }
 
-  /** Advance simulation by dt seconds. */
   update(dt: number) {
     applySimUpdate(this, dt);
   }
 
-  /** Player can click to place — MVP uses pre-placed; keep API. */
-
-  chooseEvent(choiceId: string) { doChoose(this, choiceId); }
-  snapshot() { return doSnap(this); }
-  tryBoostGenerator() { return doBoost(this); }
+  chooseEvent(choiceId: string) {
+    doChoose(this, choiceId);
+  }
+  snapshot() {
+    return doSnap(this);
+  }
+  tryBoostGenerator() {
+    return doBoost(this);
+  }
+  tryPlaceBuilding(kind: BuildingKind, x: number, y: number) {
+    return doPlace(this, kind, x, y);
+  }
+  enactLaw(lawId: string) {
+    return doLaw(this, lawId);
+  }
 }
 
 export type { JobKind };

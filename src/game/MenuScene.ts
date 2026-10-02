@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { Sfx } from '../audio/Sfx';
+import { Sfx, bindAudioScene } from '../audio/Sfx';
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -7,62 +7,73 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create() {
+    bindAudioScene(this);
     const { width, height } = this.scale;
-    const splash = document.getElementById('boot-splash');
-    if (splash) splash.classList.add('hidden');
 
-    // background
     const bg = this.add.graphics();
-    bg.fillGradientStyle(0x1a3350, 0x1a3350, 0x0b1a2a, 0x0b1a2a, 1);
+    bg.fillGradientStyle(0x1a3350, 0x1a3350, 0x0b1a2a, 0x071018, 1);
     bg.fillRect(0, 0, width, height);
 
-    // snow flakes
-    for (let i = 0; i < 60; i++) {
-      const s = this.add.circle(
-        Math.random() * width,
-        Math.random() * height,
-        1 + Math.random() * 2,
-        0xffffff,
-        0.35 + Math.random() * 0.4,
-      );
-      this.tweens.add({
-        targets: s,
-        y: s.y + height,
-        x: s.x + (Math.random() * 40 - 20),
-        duration: 6000 + Math.random() * 8000,
-        repeat: -1,
-        onRepeat: () => {
-          s.y = -10;
-          s.x = Math.random() * width;
-        },
+    if (this.textures.exists('snowflake')) {
+      this.add.particles(0, 0, 'snowflake', {
+        x: { min: 0, max: width },
+        y: -10,
+        lifespan: 8000,
+        speedY: { min: 20, max: 55 },
+        speedX: { min: -15, max: 15 },
+        scale: { min: 0.4, max: 1 },
+        alpha: { start: 0.7, end: 0.05 },
+        frequency: 100,
+        quantity: 2,
       });
+    } else {
+      for (let i = 0; i < 50; i++) {
+        const s = this.add.circle(
+          Math.random() * width,
+          Math.random() * height,
+          1 + Math.random() * 2,
+          0xffffff,
+          0.4,
+        );
+        this.tweens.add({
+          targets: s,
+          y: height + 20,
+          duration: 7000 + Math.random() * 6000,
+          repeat: -1,
+          onRepeat: () => {
+            s.y = -10;
+            s.x = Math.random() * width;
+          },
+        });
+      }
     }
 
-    // glow
-    const glow = this.add.circle(width / 2, height * 0.42, 80, 0xff6a20, 0.15);
+    if (this.textures.exists('b_generator')) {
+      this.add.image(width / 2, height * 0.42, 'b_generator').setScale(0.85).setAlpha(0.95);
+    }
+    const glow = this.add.circle(width / 2, height * 0.42, 90, 0xff6a20, 0.18);
     this.tweens.add({
       targets: glow,
-      alpha: 0.28,
-      scale: 1.15,
+      alpha: 0.32,
+      scale: 1.2,
       duration: 1800,
       yoyo: true,
       repeat: -1,
     });
 
     this.add
-      .text(width / 2, height * 0.22, 'نجاة في الصقيع', {
+      .text(width / 2, height * 0.14, 'نجاة في الصقيع', {
         fontFamily: 'Segoe UI, Tahoma, Arial',
-        fontSize: Math.min(48, width / 12) + 'px',
+        fontSize: Math.min(48, width / 11) + 'px',
         color: '#e8f4ff',
-        align: 'center',
       })
       .setOrigin(0.5)
-      .setShadow(0, 0, '#4a90d9', 16, true, true);
+      .setShadow(0, 0, '#4a90d9', 18, true, true);
 
     this.add
-      .text(width / 2, height * 0.32, 'Ember Colony', {
+      .text(width / 2, height * 0.22, 'Ember Colony', {
         fontFamily: 'Segoe UI, Tahoma, Arial',
-        fontSize: '16px',
+        fontSize: '15px',
         color: '#8ab0d0',
       })
       .setOrigin(0.5);
@@ -70,11 +81,11 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        height * 0.48,
-        'المولّد آخر دفءٍ في العالم.\nأدرِ الموارد، احمِ السكان، واختر قوانينك بحكمة.\nسيناريو: «الليلة الأولى»',
+        height * 0.58,
+        'المولّد آخر دفءٍ في العالم.\nابنِ الخيام والورش، عيّن العمل، ومرّر قوانين تدوم.\nسيناريو موسّع: «الليلة الأولى» (~١٣ يومًا)',
         {
           fontFamily: 'Segoe UI, Tahoma, Arial',
-          fontSize: '15px',
+          fontSize: '14px',
           color: '#c5d8ea',
           align: 'center',
           lineSpacing: 8,
@@ -83,7 +94,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     const btn = this.add
-      .text(width / 2, height * 0.68, '▶  بدء الوردية', {
+      .text(width / 2, height * 0.74, '▶  بدء الوردية (ضيف)', {
         fontFamily: 'Segoe UI, Tahoma, Arial',
         fontSize: '22px',
         color: '#0b1a2a',
@@ -101,7 +112,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     this.add
-      .text(width / 2, height * 0.82, 'تسجيل الدخول قريبًا · لعب فردي الآن', {
+      .text(width / 2, height * 0.86, 'تسجيل الدخول قريبًا · لعب فردي كضيف الآن', {
         fontFamily: 'Segoe UI, Tahoma, Arial',
         fontSize: '12px',
         color: '#6a849a',
@@ -109,7 +120,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.9, 'PWA · Vite · Phaser 3 · TypeScript', {
+      .text(width / 2, height * 0.93, 'PWA · Kenney CC0 · Phaser 3', {
         fontFamily: 'Segoe UI, Tahoma, Arial',
         fontSize: '11px',
         color: '#4a6070',

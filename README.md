@@ -1,8 +1,9 @@
 # نجاة في الصقيع — Ember Colony
 
-Frostpunk-like strategy survival. Keep the Generator lit through **«الليلة الأولى»** (The First Night).
+Frostpunk-inspired colony survival. Keep the Generator lit through **«الليلة الأولى»** (~13 in-game days).
 
-**AR marketing title:** نجاة في الصقيع · **EN / repo:** `ember-colony`
+**AR title:** نجاة في الصقيع · **EN / repo:** `ember-colony`  
+**Live:** https://ember-colony.vercel.app
 
 ## Play
 
@@ -12,53 +13,55 @@ npm run dev      # http://localhost:5173
 npm run build && npm run preview
 ```
 
-Or open the deployed Vercel URL once linked.
+Guest play is always available. Login button is a stub and never blocks play.
 
 ### How to play (EN)
 
-1. Click **بدء الوردية** (Start Shift).
-2. Watch citizens walk to gathering post, cookhouse, and coal pile.
-3. HUD: coal · wood · food · Hope · Discontent · day/night · ambient °C.
-4. Click a citizen for Arabic thoughtlets.
-5. Mid-run: **law choice** and a **cold snap** — pick wisely.
-6. Survive until dawn (progress bar). Lose if Hope hits 0, Discontent hits 100, or too many freeze/starve.
-7. **تعزيز** spends coal to widen generator heat. **Mute** toggles Web Audio SFX.
-8. **تسجيل الدخول قريبًا** is a stub — play is never blocked.
+1. Start the shift from the menu.
+2. Open **بناء** to place tents, gathering posts, cookhouse, coal pile, coal thumper, workshop, medical post (pay wood/coal/food/steel).
+3. Toggle **دفء** to visualize generator heat radius.
+4. Use **قوانين** for lasting laws (emergency shift, rationing, faith keepers, radical treatment). Mid-run events also force lasting choices.
+5. Citizens pathfind to work / eat / sleep / heal; click one for Arabic thoughtlets.
+6. Boost the generator with coal to widen heat. Survive cold snap + endgame storm until dawn.
+7. Win: reach dawn. Lose: hope 0, discontent 100, mass freeze/starve/storm deaths.
 
 ### كيف تلعب (AR)
 
 1. اضغط **بدء الوردية**.
-2. السكان يتحركون نحو الوظائف والطعام والدفء.
-3. راقب الفحم والخشب والطعام والأمل والسخط ودرجة الحرارة.
-4. انقر مواطنًا لرؤية خواطره.
-5. سيظهر قانون طوارئ ثم موجة صقيع — اختر قرارك.
-6. اصمد حتى الفجر. الهزيمة: أمل صفر / سخط كامل / تجمّد أو جوع جماعي.
+2. **بناء**: ضع خيامًا ومحطات جمع ومطبخًا وكومة/قاسم فحم وورشة وعيادة.
+3. **دفء**: أظهر نطاق حرارة المولّد.
+4. **قوانين**: اختر قوانين دائمة؛ والأحداث تفرض قرارات أيضًا.
+5. السكان يمشون للعمل/الطعام/النوم/العلاج — انقر مواطنًا لخواطره.
+6. عزّز المولّد بالفحم. اصمد أمام موجة الصقيع ثم العاصفة حتى الفجر.
 
 ## Stack
 
-- Vite + Phaser 3 + TypeScript + PWA (`vite-plugin-pwa`)
-- Pure TS simulation under `src/sim/` (grid, BFS pathing, heat, events)
-- Procedural canvas textures (cold blue-gray palette)
-- `vercel.json` for static deploy
+- Vite + Phaser 3 + TypeScript + PWA
+- Pure TS sim: grid, BFS pathing, heat, jobs, laws, production chains
+- Pixel-art buildings/citizens (generated) + Kenney CC0 tiles/SFX/UI samples
 
-## Stubbed / next steps
+## Assets & licenses
 
-| Area | Status |
-|------|--------|
-| Auth login button | Stub only — do not block play |
-| Multiplayer | Not started |
-| Suggested auth | [Clerk](https://clerk.com) or [Supabase Auth](https://supabase.com/auth) |
-| Suggested realtime | [Colyseus](https://www.colyseus.io) rooms for shared colony shifts |
-| Building placement UI | Pre-placed MVP; API `tryBoostGenerator` only |
-| Persistent meta / multiple scenarios | First night only |
+| Source | Use | License |
+|--------|-----|---------|
+| [Kenney Tiny Ski](https://kenney.nl/assets/tiny-ski) | Snow tile references | CC0 |
+| [Kenney Tiny Town](https://kenney.nl/assets/tiny-town) | Town tile references | CC0 |
+| [Kenney Platformer Art Winter / Ice World](https://opengameart.org/content/platformer-art-winter) | Trees, igloo, rocks, tundra decor | CC0 |
+| [Kenney Interface Sounds](https://kenney.nl/assets/interface-sounds) | UI clicks / confirms | CC0 |
+| [Kenney UI Pack](https://kenney.nl/assets/ui-pack) | Sample button PNGs + tap/click OGG | CC0 |
+| Generated (`public/assets/gen`, `citizens`) | Buildings, walk cycles, snow/heat tiles, particles | Project / free to use |
+| Procedural ambient (`wind_loop`, `generator_hum`, `storm_wind`) | ffmpeg noise/sine loops | Project |
+
+Credit **Kenney.nl** appreciated (not required under CC0).
 
 ## Project layout
 
 ```
-src/sim/       # SimState, pathfinding, thoughts, types
-src/game/      # Phaser scenes + procedural textures
-src/ui/        # DOM HUD (RTL Arabic)
-src/audio/     # Web Audio beeps
+public/assets/   # Kenney CC0 + generated sprites/audio
+src/sim/         # Simulation (config, setup, update, actions, pathfinding)
+src/game/        # Boot / Menu / Play / End + EventModal
+src/ui/          # RTL game HUD panels (build + laws)
+src/audio/       # Kenney SFX + ambience helpers
 ```
 
 ## Deploy (Vercel)
@@ -67,8 +70,14 @@ src/audio/     # Web Audio beeps
 npm run build   # output: dist/
 ```
 
-Connect the GitHub repo `mohammedemara48-code/ember-colony` to Vercel (project name `ember-colony`). Framework preset: Other / Vite. Output: `dist`.
+Connect GitHub `mohammedemara48-code/ember-colony` → project `ember-colony`. Framework: Vite. Output: `dist`.
 
-## License
+## Gaps vs AAA (honest)
 
-Prototype for friends — art is procedural placeholders (Kenney-like spirit, not copied assets).
+- No hand-painted isometric city art or Frostpunk-level animation fidelity.
+- Citizen walk cycles are compact pixel sheets (4-dir), not skeletal/rigged.
+- No full voice-over, music score, or complex tech tree / book of laws UI.
+- Auth/multiplayer still stubbed.
+- Scenario is one expanded first-night arc, not a campaign of cities.
+
+Still: real sprites, weather, heat viz, build mode, laws, production chains, audio, PWA, Arabic RTL — far beyond placeholder rectangles.

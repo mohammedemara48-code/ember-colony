@@ -1,24 +1,20 @@
-/** Tiny Web Audio SFX — no external assets required. */
+import Phaser from 'phaser';
 
-let ctx: AudioContext | null = null;
+/** Kenney CC0 SFX + ambient loops via Phaser sound manager bridge. */
+
 let muted = false;
-let master = 0.22;
+let sceneRef: Phaser.Scene | null = null;
+let wind: Phaser.Sound.BaseSound | null = null;
+let hum: Phaser.Sound.BaseSound | null = null;
+let storm: Phaser.Sound.BaseSound | null = null;
 
-function ac(): AudioContext | null {
-  if (muted) return null;
-  if (!ctx) {
-    try {
-      ctx = new AudioContext();
-    } catch {
-      return null;
-    }
-  }
-  if (ctx.state === 'suspended') void ctx.resume();
-  return ctx;
+export function bindAudioScene(scene: Phaser.Scene) {
+  sceneRef = scene;
 }
 
 export function setMuted(m: boolean) {
   muted = m;
+  if (sceneRef) sceneRef.sound.mute = m;
 }
 
 export function isMuted() {
@@ -26,58 +22,96 @@ export function isMuted() {
 }
 
 export function toggleMute() {
-  muted = !muted;
+  setMuted(!muted);
   return muted;
 }
 
-function beep(
-  freq: number,
-  dur: number,
-  type: OscillatorType = 'sine',
-  gain = 0.2,
-  freqEnd?: number,
-) {
-  const a = ac();
-  if (!a) return;
-  const t0 = a.currentTime;
-  const o = a.createOscillator();
-  const g = a.createGain();
-  o.type = type;
-  o.frequency.setValueAtTime(freq, t0);
-  if (freqEnd != null) o.frequency.exponentialRampToValueAtTime(freqEnd, t0 + dur);
-  g.gain.setValueAtTime(0.0001, t0);
-  g.gain.exponentialRampToValueAtTime(master * gain, t0 + 0.02);
-  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  o.connect(g);
-  g.connect(a.destination);
-  o.start(t0);
-  o.stop(t0 + dur + 0.02);
+function play(key: string, cfg?: Phaser.Types.Sound.SoundConfig) {
+  if (muted || !sceneRef) return;
+  try {
+    if (sceneRef.cache.audio.exists(key)) sceneRef.sound.play(key, cfg);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function startAmbience(scene: Phaser.Scene) {
+  bindAudioScene(scene);
+  scene.sound.mute = muted;
+  if (!wind && scene.cache.audio.exists('wind_loop')) {
+    wind = scene.sound.add('wind_loop', { loop: true, volume: 0.22 });
+    wind.play();
+  }
+  if (!hum && scene.cache.audio.exists('generator_hum')) {
+    hum = scene.sound.add('generator_hum', { loop: true, volume: 0.18 });
+    hum.play();
+  }
+}
+
+export function stopAmbience() {
+  wind?.stop();
+  hum?.stop();
+  storm?.stop();
+  wind = hum = storm = null;
+}
+
+export function setStormAmbience(on: boolean) {
+  if (!sceneRef) return;
+  if (on) {
+    hum?.pause();
+    if (!storm && sceneRef.cache.audio.exists('storm_wind')) {
+      storm = sceneRef.sound.add('storm_wind', { loop: true, volume: 0.4 });
+      storm.play();
+    } else storm?.resume();
+  } else {
+    storm?.stop();
+    storm = null;
+    hum?.resume();
+  }
+}
+
+export function setGeneratorHum(on: boolean) {
+  if (!hum) return;
+  if (on) {
+    if (!hum.isPlaying) hum.play();
+    (hum as Phaser.Sound.WebAudioSound).setVolume?.(0.18);
+  } else {
+    (hum as Phaser.Sound.WebAudioSound).setVolume?.(0.02);
+  }
 }
 
 export const Sfx = {
   click() {
-    beep(520, 0.06, 'triangle', 0.15);
+    play('click_001', { volume: 0.35 });
   },
   start() {
-    beep(220, 0.12, 'sawtooth', 0.12, 440);
-    setTimeout(() => beep(440, 0.15, 'triangle', 0.1, 660), 100);
+    play('confirmation_001', { volume: 0.4 });
   },
   event() {
-    beep(180, 0.2, 'square', 0.1);
-    setTimeout(() => beep(140, 0.25, 'square', 0.08), 120);
+    play('question_001', { volume: 0.45 });
   },
   cold() {
-    beep(900, 0.4, 'sine', 0.06, 200);
+    play('bong_001', { volume: 0.35 });
   },
   win() {
-    beep(330, 0.15, 'triangle', 0.12, 440);
-    setTimeout(() => beep(440, 0.15, 'triangle', 0.12, 550), 140);
-    setTimeout(() => beep(660, 0.25, 'triangle', 0.12), 280);
+    play('maximize_001', { volume: 0.45 });
   },
   lose() {
-    beep(300, 0.3, 'sawtooth', 0.1, 80);
+    play('error_001', { volume: 0.4 });
   },
   place() {
-    beep(380, 0.08, 'square', 0.08);
+    play('drop_001', { volume: 0.4 });
+  },
+  build() {
+    play('drop_002', { volume: 0.45 });
+  },
+  open() {
+    play('open_001', { volume: 0.35 });
+  },
+  select() {
+    play('select_001', { volume: 0.3 });
+  },
+  switch() {
+    play('switch_001', { volume: 0.3 });
   },
 };

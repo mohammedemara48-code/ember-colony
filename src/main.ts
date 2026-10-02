@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { BootScene } from './game/BootScene';
 import { EndScene } from './game/EndScene';
 import { MenuScene } from './game/MenuScene';
 import { PlayScene } from './game/PlayScene';
@@ -18,13 +19,12 @@ const config: Phaser.Types.Core.GameConfig = {
     height: window.innerHeight,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [MenuScene, PlayScene, EndScene],
+  scene: [BootScene, MenuScene, PlayScene, EndScene],
   fps: { target: 60, forceSetTimeOut: true },
-  render: { antialias: true, pixelArt: false },
+  render: { antialias: false, pixelArt: true, roundPixels: true },
   audio: { disableWebAudio: false },
 };
 
-// resume audio on first gesture
 window.addEventListener(
   'pointerdown',
   () => {
@@ -35,7 +35,6 @@ window.addEventListener(
 
 new Phaser.Game(config);
 
-// PWA register (vite-plugin-pwa injects virtual module)
 try {
   void import('virtual:pwa-register').then(({ registerSW }) => {
     registerSW({ immediate: true });
