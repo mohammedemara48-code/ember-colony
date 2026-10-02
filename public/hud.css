@@ -1,0 +1,113 @@
+#game-hud {
+      position: fixed; inset: 0; pointer-events: none; z-index: 20;
+      font-family: "Segoe UI", Tahoma, "Noto Sans Arabic", Arial, sans-serif;
+      color: #f0e6d4; direction: rtl;
+    }
+    #game-hud .panel {
+      background:
+        linear-gradient(165deg, rgba(22,32,48,.96), rgba(10,16,26,.92)),
+        repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(180,140,70,.03) 3px, rgba(180,140,70,.03) 4px);
+      border: 2px solid #8a6e3e;
+      box-shadow:
+        0 12px 36px rgba(0,0,0,.55),
+        inset 0 1px 0 rgba(232,200,120,.18),
+        inset 0 0 0 1px rgba(40,50,70,.8);
+      border-radius: 6px;
+      position: relative;
+    }
+    #game-hud .panel::before, #game-hud .panel::after {
+      content: ''; position: absolute; width: 10px; height: 10px;
+      border: 2px solid #c4a35a; pointer-events: none;
+    }
+    #game-hud .panel::before { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+    #game-hud .panel::after { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+    #game-hud .hud-top {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px; margin: 12px 14px; padding: 12px 16px; pointer-events: auto;
+      flex-wrap: wrap;
+    }
+    #game-hud .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin-inline-start: 8px; font-size: 14px; font-weight: 600;
+      background: rgba(12,18,28,.75); padding: 6px 12px; border-radius: 4px;
+      border: 1px solid rgba(180,140,70,.35);
+      letter-spacing: 0.02em;
+    }
+    #game-hud .ico { width: 12px; height: 12px; border-radius: 2px; display: inline-block; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+    #game-hud .ico.coal { background: linear-gradient(135deg,#2a2a32,#555); }
+    #game-hud .ico.wood { background: linear-gradient(135deg,#6a4a28,#a87840); }
+    #game-hud .ico.food { background: linear-gradient(135deg,#a05028,#d08040); }
+    #game-hud .ico.steel { background: linear-gradient(135deg,#708090,#b0c0d0); }
+    #game-hud .hud-time {
+      font-size: 13px; opacity: .95; text-align: center; flex: 1; min-width: 200px;
+      color: #e8dcc0; text-shadow: 0 1px 2px #000;
+    }
+    #game-hud .hud-actions button {
+      pointer-events: auto; margin: 2px; cursor: pointer;
+      background: linear-gradient(180deg, #3a4a62, #1e2a3c);
+      color: #f0e6d4; border: 1px solid #8a6e3e;
+      border-radius: 4px; padding: 8px 12px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 0 #0a1018, inset 0 1px 0 rgba(255,220,140,.12);
+      transition: background .15s, border-color .15s;
+    }
+    #game-hud .hud-actions button:hover { border-color: #e8b84a; background: linear-gradient(180deg, #4a5a72, #283848); }
+    #game-hud .hud-actions button.accent {
+      background: linear-gradient(180deg, #c4923a, #8a6020);
+      border-color: #e8b84a; color: #1a1208;
+    }
+    #game-hud .hud-actions button.on { outline: 2px solid #e8b84a; outline-offset: 1px; }
+    #game-hud .hud-actions button.login { opacity: .75; background: #1a2430; }
+    #game-hud .hud-mood {
+      width: min(360px, 92vw); margin: 0 14px; padding: 12px 16px; font-size: 13px;
+    }
+    #game-hud .mood-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    #game-hud .mood-row span { width: 40px; color: #c4a35a; font-weight: 600; }
+    #game-hud .mood-row b { width: 30px; text-align: left; }
+    #game-hud .bar {
+      flex: 1; height: 11px; background: #0a1018; border-radius: 2px; overflow: hidden;
+      border: 1px solid #3a4a5a; box-shadow: inset 0 1px 3px rgba(0,0,0,.5);
+    }
+    #game-hud .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg,#1a8a50,#6ee0a8); transition: width .2s; }
+    #game-hud .bar.disc i { background: linear-gradient(90deg,#8a2020,#e07060); }
+    #game-hud .progress-wrap { margin-top: 10px; }
+    #game-hud .prog-label { font-size: 11px; opacity: .7; color: #c4a35a; }
+    #game-hud .progress { height: 8px; background: #0a1018; border-radius: 2px; overflow: hidden; border: 1px solid #3a4a5a; }
+    #game-hud .progress i { display:block; height:100%; background: linear-gradient(90deg,#3a68a0,#e8b84a,#e07040); width:0; }
+    #game-hud .hud-build, #game-hud .hud-laws {
+      position: absolute; top: 78px; left: 14px; width: min(340px, 90vw);
+      padding: 14px; pointer-events: auto; z-index: 25;
+    }
+    #game-hud .panel-title {
+      font-weight: 700; margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center;
+      color:#e8b84a; font-size: 15px; letter-spacing: 0.03em;
+      border-bottom: 1px solid rgba(196,163,90,.35); padding-bottom: 8px;
+    }
+    #game-hud .x { background:transparent; border:none; color:#c4a35a; cursor:pointer; font-size:18px; }
+    #game-hud .build-grid, #game-hud .laws-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    #game-hud .build-card, #game-hud .law-card {
+      background: rgba(14,22,34,.95); border: 1px solid #5a4a30; border-radius: 4px;
+      padding: 10px; cursor: pointer; color: #f0e6d4; text-align: right;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    #game-hud .build-card:hover, #game-hud .law-card:hover { border-color: #c4a35a; }
+    #game-hud .build-card strong, #game-hud .law-card strong { display:block; font-size:14px; }
+    #game-hud .build-card small, #game-hud .law-card small { opacity:.75; font-size:11px; }
+    #game-hud .build-card.selected { border-color: #e8b84a; box-shadow: 0 0 0 2px rgba(232,184,74,.35); }
+    #game-hud .hint { font-size: 11px; opacity: .65; margin: 10px 0 0; }
+    #game-hud .laws-active { margin-top: 12px; font-size: 12px; color: #e8b84a; }
+    #game-hud .hidden { display: none !important; }
+    #game-hud .hud-msg {
+      position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+      background: rgba(12,18,28,.95); border: 2px solid #8a6e3e; border-radius: 6px;
+      padding: 12px 22px; font-size: 14px; max-width: 90vw; opacity: 0; transition: opacity .3s;
+      pointer-events: none; text-align: center; box-shadow: 0 10px 28px rgba(0,0,0,.45);
+    }
+    #game-hud .hud-msg.show { opacity: 1; }
+    #game-hud .hud-thought {
+      position: absolute; bottom: 78px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(165deg, rgba(22,32,48,.97), rgba(12,18,28,.95));
+      border: 2px solid #8a6e3e; border-radius: 6px;
+      padding: 14px 20px; font-size: 14px; max-width: min(440px, 90vw); text-align: center;
+      pointer-events: none; box-shadow: 0 12px 32px rgba(0,0,0,.5);
+    }
+    #game-hud .hud-thought strong { color: #e8b84a; }
