@@ -2,9 +2,9 @@ import type { BuildRecipe, SimConfig } from './types';
 
 /** ~13–14 day feel: 32s cycles × ~13 = ~416s */
 export const DEFAULT_CONFIG: SimConfig = {
-  gridW: 30,
-  gridH: 30,
-  tileSize: 32,
+  gridW: 28,
+  gridH: 28,
+  tileSize: 48,
   citizenCount: 18,
   scenarioSeconds: 420,
   dayNightCycle: 32,
