@@ -1,3 +1,5 @@
+import type { SimState } from './SimState';
+import type { Building, Citizen } from './types';
 /** Tick logic for Ember Colony survival sim. */
 import { thoughtFor } from './thoughts';
 
@@ -5,13 +7,13 @@ function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
 }
 
-function heatAvg(sim: any) {
+function heatAvg(sim: SimState) {
   let s = 0;
   for (const c of sim.citizens) s += sim.heatAt(c.x, c.y);
   return s / Math.max(1, sim.citizens.length);
 }
 
-export function applySimUpdate(sim: any, dt: number): void {
+export function applySimUpdate(sim: SimState, dt: number): void {
   if (sim.ended || sim.activeEvent) return;
 
   sim.time += dt;
@@ -205,15 +207,15 @@ export function applySimUpdate(sim: any, dt: number): void {
 
   if (sim.hopeTick <= 0) {
     sim.hopeTick = 2.2;
-    const alive = sim.citizens.filter((c: any) => c.health > 0);
+    const alive = sim.citizens.filter((c: Citizen) => c.health > 0);
     if (!alive.length) {
       sim.ended = true;
       sim.endReason = 'frozen';
       sim.message = 'لم يبقَ أحد.';
       return;
     }
-    const avgCold = alive.reduce((s: number, c: any) => s + c.cold, 0) / alive.length;
-    const avgHunger = alive.reduce((s: number, c: any) => s + c.hunger, 0) / alive.length;
+    const avgCold = alive.reduce((s: number, c: Citizen) => s + c.cold, 0) / alive.length;
+    const avgHunger = alive.reduce((s: number, c: Citizen) => s + c.hunger, 0) / alive.length;
 
     if (avgCold > 50) sim.resources.hope -= 1.1;
     if (avgHunger > 55) sim.resources.hope -= 0.75;
@@ -233,12 +235,12 @@ export function applySimUpdate(sim: any, dt: number): void {
     if (sim.stormActive) sim.resources.hope -= 0.8;
 
     // medical heal pulse
-    const meds = sim.buildings.filter((b: any) => b.kind === 'medical');
+    const meds = sim.buildings.filter((b: Building) => b.kind === 'medical');
     if (meds.length) {
       for (const c of alive) {
         if (c.health < 70) {
           const near = meds.some(
-            (m: any) => Math.hypot(c.x - (m.x + 1), c.y - (m.y + 1)) < 4,
+            (m: Building) => Math.hypot(c.x - (m.x + 1), c.y - (m.y + 1)) < 4,
           );
           if (near) c.health = Math.min(100, c.health + (sim.laws.radicalTreatment ? 3 : 1.2));
         }
