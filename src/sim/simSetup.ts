@@ -2,10 +2,11 @@
 import { nearestWalkable } from './pathfinding';
 import { NAMES_AR } from './thoughts';
 import { sid } from './config';
+import type { SimState } from './SimState';
 import type { Building, BuildingKind, Citizen } from './types';
 
 export function placeBuilding(
-  sim: any,
+  sim: SimState,
   kind: BuildingKind,
   x: number,
   y: number,
@@ -38,7 +39,7 @@ export function placeBuilding(
   return b;
 }
 
-export function canPlaceAt(sim: any, x: number, y: number, w: number, h: number): boolean {
+export function canPlaceAt(sim: SimState, x: number, y: number, w: number, h: number): boolean {
   if (x < 1 || y < 1 || x + w >= sim.config.gridW - 1 || y + h >= sim.config.gridH - 1)
     return false;
   for (let yy = y; yy < y + h; yy++) {
@@ -50,7 +51,7 @@ export function canPlaceAt(sim: any, x: number, y: number, w: number, h: number)
   return true;
 }
 
-export function placeBuildings(sim: any) {
+export function placeBuildings(sim: SimState) {
   const cx = Math.floor(sim.config.gridW / 2);
   const cy = Math.floor(sim.config.gridH / 2);
 
@@ -88,7 +89,7 @@ export function placeBuildings(sim: any) {
   }
 }
 
-export function spawnCitizens(sim: any) {
+export function spawnCitizens(sim: SimState) {
   const tents = sim.buildings.filter((b: Building) => b.kind === 'tent');
   const names = [...NAMES_AR].sort(() => Math.random() - 0.5);
   for (let i = 0; i < sim.config.citizenCount; i++) {
@@ -125,7 +126,7 @@ export function spawnCitizens(sim: any) {
   }
 }
 
-export function setupEvents(sim: any) {
+export function setupEvents(sim: SimState) {
   sim.events = [
     {
       id: 'law_1',

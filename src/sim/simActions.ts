@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BUILD_RECIPES } from './config';
 import { canPlaceAt, placeBuilding } from './simSetup';
-import type { BuildingKind } from './types';
+import type { SimState } from './SimState';
+import type { BuildingKind, Citizen } from './types';
 
-export function chooseEvent(sim: any, choiceId: string) {
+export function chooseEvent(sim: SimState, choiceId: string) {
   const ev = sim.activeEvent;
   if (!ev) return;
-  const choice = ev.choices.find((c: any) => c.id === choiceId);
+  const choice = ev.choices.find((c) => c.id === choiceId);
   if (!choice) return;
 
   if (ev.kind === 'law') {
@@ -87,7 +88,7 @@ export function chooseEvent(sim: any, choiceId: string) {
   sim.activeEvent = null;
 }
 
-export function snapshot(sim: any) {
+export function snapshot(sim: SimState) {
   const radius =
     sim.config.generatorHeatRadius + (sim.generatorLevel - 1) * 1.5;
   return {
@@ -97,9 +98,9 @@ export function snapshot(sim: any) {
     isNight: sim.isNight,
     ambientTemp: sim.ambientTemp,
     resources: { ...sim.resources },
-    citizensAlive: sim.citizens.filter((c: any) => c.cold < 100 && c.hunger < 100 && c.health > 0)
+    citizensAlive: sim.citizens.filter((c: Citizen) => c.cold < 100 && c.hunger < 100 && c.health > 0)
       .length,
-    citizensFreezing: sim.citizens.filter((c: any) => c.cold > 80).length,
+    citizensFreezing: sim.citizens.filter((c: Citizen) => c.cold > 80).length,
     generatorOn: sim.generatorOn,
     generatorLevel: sim.generatorLevel,
     activeEvent: sim.activeEvent,
@@ -113,7 +114,7 @@ export function snapshot(sim: any) {
   };
 }
 
-export function tryBoostGenerator(sim: any) {
+export function tryBoostGenerator(sim: SimState) {
   if (sim.resources.coal >= 12 && sim.generatorLevel < 3) {
     sim.resources.coal -= 12;
     sim.generatorLevel++;
@@ -124,7 +125,7 @@ export function tryBoostGenerator(sim: any) {
   return false;
 }
 
-export function tryPlaceBuilding(sim: any, kind: BuildingKind, x: number, y: number): boolean {
+export function tryPlaceBuilding(sim: SimState, kind: BuildingKind, x: number, y: number): boolean {
   const recipe = BUILD_RECIPES.find((r) => r.kind === kind);
   if (!recipe) return false;
   if (sim.resources.wood < recipe.wood) return false;
@@ -143,7 +144,7 @@ export function tryPlaceBuilding(sim: any, kind: BuildingKind, x: number, y: num
   return true;
 }
 
-export function enactLaw(sim: any, lawId: string): boolean {
+export function enactLaw(sim: SimState, lawId: string): boolean {
   if (sim.lawsUnlocked[lawId]) return false;
   // Manual laws panel — lasting choices with costs
   if (lawId === 'emergency' && sim.resources.hope >= 5) {
